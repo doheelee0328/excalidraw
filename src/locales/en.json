@@ -27,6 +27,7 @@
     "strokeStyle_dashed": "Dashed",
     "strokeStyle_dotted": "Dotted",
     "sloppiness": "Sloppiness",
+    "pressureSensitivity": "Pressure Sensitivity",
     "opacity": "Opacity",
     "textAlign": "Text align",
     "edges": "Edges",
