@@ -143,8 +143,10 @@ export const SelectedShapeActions = ({
       )}
 
       {renderAction("changeOpacity")}
+      {/* change opacity property*/}
 
       <fieldset>
+        {/* layers */}
         <legend>{t("labels.layers")}</legend>
         <div className="buttonList">
           {renderAction("sendToBack")}
@@ -155,6 +157,7 @@ export const SelectedShapeActions = ({
       </fieldset>
 
       {targetElements.length > 1 && !isSingleElementBoundContainer && (
+        // the stroke width
         <fieldset>
           <legend>{t("labels.align")}</legend>
           <div className="buttonList">
@@ -196,9 +199,11 @@ export const SelectedShapeActions = ({
           </div>
         </fieldset>
       )}
+
       {!isEditing && targetElements.length > 0 && (
         <fieldset>
           <legend>{t("labels.actions")}</legend>
+
           <div className="buttonList">
             {!device.isMobile && renderAction("duplicateSelection")}
             {!device.isMobile && renderAction("deleteSelectedElements")}

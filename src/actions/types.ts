@@ -124,6 +124,7 @@ export type ActionName =
   | "setFrameAsActiveTool"
   | "setEmbeddableAsActiveTool"
   | "createContainerFromText"
+  | "pressureSensitivity"
   | "wrapTextInContainer";
 
 export type PanelComponentProps = {

@@ -557,6 +557,20 @@ export const actionChangeOpacity = register({
   ),
 });
 
+export const actionPressureSensitivity = register({
+  name: "pressureSensitivity",
+  trackEvent: false,
+  perform: (elements, appState, value) => {
+    return changeFontSize(elements, appState, () => value, value);
+  },
+  PanelComponent: ({ elements, appState, updateData }) => (
+    <div>
+      {/* <label>{t("labels.pressureSensitivity")}</label> */}
+      <button></button>
+    </div>
+  ),
+});
+
 export const actionChangeFontSize = register({
   name: "changeFontSize",
   trackEvent: false,
