@@ -566,7 +566,7 @@ export const actionPressureSensitivity = register({
   PanelComponent: ({ elements, appState, updateData }) => (
     <div>
       <label>{t("labels.pressureSensitivity")}</label>
-      <button></button>
+      <button>Click me</button>
     </div>
   ),
 });

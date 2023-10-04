@@ -144,6 +144,8 @@ export const SelectedShapeActions = ({
 
       {renderAction("changeOpacity")}
       {/* change opacity property*/}
+      {renderAction("pressureSensitivity")}
+      {/* change the pressureSensitivity */}
 
       <fieldset>
         {/* layers */}
