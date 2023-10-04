@@ -569,6 +569,7 @@ export const actionPressureSensitivity = register({
       <button>Click me</button>
     </div>
   ),
+  // state to toggle between the circle
 });
 
 export const actionChangeFontSize = register({
