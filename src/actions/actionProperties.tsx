@@ -564,9 +564,14 @@ export const actionPressureSensitivity = register({
     return changeFontSize(elements, appState, () => value, value);
   },
   PanelComponent: ({ elements, appState, updateData }) => (
-    <div>
-      <label>{t("labels.pressureSensitivity")}</label>
-      <button>Click me</button>
+    <div className="pressure-container">
+      <label className="pressure-label">
+        {t("labels.pressureSensitivity")}
+      </label>
+      <div className="pressure-button-container">
+        <div className="pressure-button-toggle-ball"></div>
+        <button className="pressure-button"></button>
+      </div>
     </div>
   ),
   // state to toggle between the circle

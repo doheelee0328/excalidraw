@@ -141,14 +141,14 @@ export const SelectedShapeActions = ({
         targetElements.some((element) => canHaveArrowheads(element.type))) && (
         <>{renderAction("changeArrowhead")}</>
       )}
-
-      {renderAction("changeOpacity")}
-      {/* change opacity property*/}
       {renderAction("pressureSensitivity")}
       {/* change the pressureSensitivity */}
+      {renderAction("changeOpacity")}
+      {/* change opacity property*/}
 
       <fieldset>
         {/* layers */}
+        {/* {renderAction("pressureSensitivity")} */}
         <legend>{t("labels.layers")}</legend>
         <div className="buttonList">
           {renderAction("sendToBack")}

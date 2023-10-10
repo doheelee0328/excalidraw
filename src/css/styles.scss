@@ -145,6 +145,40 @@
       width: 100%;
     }
 
+    .pressure-container {
+      display: flex;
+      gap: 0.8em;
+      align-items: center;
+      margin-top: 0.2rem;
+      border: 1px solid red;
+
+      .pressure-label {
+        font-size: 13px;
+      }
+
+      .pressure-button-container {
+        display: flex;
+        position: relative;
+        margin-top: 0.1rem;
+        .pressure-button-toggle-ball {
+          width: 40%;
+          height: 0.7rem;
+          background-color: var(--default-bg-color);
+          border-radius: 50%;
+          transform: translate(0.64rem, 0.05rem);
+        }
+
+        .pressure-button {
+          background-color: var(--link-color);
+          border-radius: 32px;
+          border: none;
+          width: var(--lg-button-size);
+          height: 0.8rem;
+          font-size: 10px;
+        }
+      }
+    }
+
     legend {
       padding: 0;
     }
