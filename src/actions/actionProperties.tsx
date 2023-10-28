@@ -9,6 +9,7 @@ import { trackEvent } from "../analytics";
 import { ButtonIconSelect } from "../components/ButtonIconSelect";
 import { ColorPicker } from "../components/ColorPicker/ColorPicker";
 import { IconPicker } from "../components/IconPicker";
+import React, { useEffect, useState } from "react";
 // TODO barnabasmolnar/editor-redesign
 // TextAlignTopIcon, TextAlignBottomIcon,TextAlignMiddleIcon,
 // ArrowHead icons
@@ -561,20 +562,101 @@ export const actionPressureSensitivity = register({
   name: "pressureSensitivity",
   trackEvent: false,
   perform: (elements, appState, value) => {
-    return changeFontSize(elements, appState, () => value, value);
+    return {
+      elements: changeProperty(
+        elements,
+        appState,
+        (el) =>
+          newElementWith(el, {
+            strokeWidth: value,
+          }),
+        true,
+      ),
+      appState: { ...appState, currentItemStrokeWidth: value },
+      commitToHistory: true,
+    };
   },
-  PanelComponent: ({ elements, appState, updateData }) => (
-    <div className="pressure-container">
-      <label className="pressure-label">
-        {t("labels.pressureSensitivity")}
-      </label>
-      <div className="pressure-button-container">
-        <div className="pressure-button-toggle-ball"></div>
-        <button className="pressure-button"></button>
+  PanelComponent: ({ elements, appState, updateData }) => {
+    const [pressureSimulationEnabled, setPressureSimulationEnabled] =
+      useState(false);
+    const [velocity, setVelocity] = useState(0);
+    const togglePressureSimulation = () => {
+      setPressureSimulationEnabled(!pressureSimulationEnabled);
+      const calculateLineThickness = (velocity: number) => {
+        if (pressureSimulationEnabled) {
+          const scalingFactor = 0.1;
+          return Math.max(1, 2 - velocity * scalingFactor);
+        }
+        return 1;
+      };
+
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      useEffect(() => {
+        const handleMouseMove = (event: {
+          clientX: number;
+          clientY: number;
+        }) => {
+          if (
+            lastX !== undefined &&
+            lastY !== undefined &&
+            lastTime !== undefined
+          ) {
+            const currentTime = new Date().getTime();
+            const dx = event.clientX - lastX;
+            const dy = event.clientY - lastY;
+            const dt = currentTime - lastTime;
+            const newVelocity = Math.sqrt(dx * dx + dy * dy) / dt;
+            setVelocity(newVelocity);
+          }
+
+          lastX = event.clientX;
+          lastY = event.clientY;
+          lastTime = new Date().getTime();
+        };
+
+        let lastX: number | undefined;
+        let lastY: number | undefined;
+        let lastTime: number | undefined;
+
+        window.addEventListener("mousemove", handleMouseMove);
+
+        // Clean up the event listener when the component unmounts
+        return () => {
+          window.removeEventListener("mousemove", handleMouseMove);
+        };
+      }, []); // Empty dependency array ensures this effect runs once on component mount
+
+      const updatedValue = calculateLineThickness(velocity);
+      updateData(updatedValue);
+    };
+    return (
+      <div className="pressure-container">
+        <label className="pressure-label">
+          {t("labels.pressureSensitivity")}
+        </label>
+        <div className="pressure-button-container">
+          <div
+            className={`pressure-button-toggle-ball ${
+              pressureSimulationEnabled ? "active" : ""
+            }`}
+            onClick={togglePressureSimulation}
+          ></div>
+          <button
+            className="pressure-button"
+            onClick={togglePressureSimulation}
+            value={
+              getFormValue(
+                elements,
+                appState,
+                (element) => element.strokeWidth,
+                appState.currentItemStrokeWidth,
+              ) ?? undefined
+            }
+          ></button>
+        </div>
       </div>
-    </div>
-  ),
-  // state to toggle between the circle
+    );
+  },
 });
 
 export const actionChangeFontSize = register({
