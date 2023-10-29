@@ -160,23 +160,23 @@
         position: relative;
         margin-top: 0.1rem;
         .pressure-button-toggle-ball {
-          width: 40%;
-          height: 0.7rem;
+          width: 45%;
+          height: 0.58rem;
           background-color: var(--default-bg-color);
           border-radius: 50%;
-          transform: translate(0.66rem, 0.05rem);
+          transform: translate(0.7rem, 0.1rem);
           transition: 0.2s ease-in-out;
         }
 
         .pressure-button-toggle-ball.active {
-          transform: translate(1.5rem, 0.05rem);
+          transform: translate(1.3rem, 0.1rem);
         }
 
         .pressure-button {
           background-color: var(--link-color);
-          border-radius: 32px;
+          border-radius: 35px;
           border: none;
-          width: var(--lg-button-size);
+          width: 2rem;
           height: 0.8rem;
           font-size: 10px;
         }

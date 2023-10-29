@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { AppState, Primitive } from "../../src/types";
 import {
   DEFAULT_ELEMENT_BACKGROUND_COLOR_PALETTE,
@@ -9,7 +10,6 @@ import { trackEvent } from "../analytics";
 import { ButtonIconSelect } from "../components/ButtonIconSelect";
 import { ColorPicker } from "../components/ColorPicker/ColorPicker";
 import { IconPicker } from "../components/IconPicker";
-import React, { useEffect, useState } from "react";
 // TODO barnabasmolnar/editor-redesign
 // TextAlignTopIcon, TextAlignBottomIcon,TextAlignMiddleIcon,
 // ArrowHead icons
@@ -620,7 +620,7 @@ export const actionPressureSensitivity = register({
       setPressureSimulationEnabled(!pressureSimulationEnabled);
       const calculateLineThickness = (velocity: number) => {
         if (pressureSimulationEnabled) {
-          const scalingFactor = 0.1;
+          const scalingFactor = 0.5;
           return Math.max(1, 2 - velocity * scalingFactor);
         }
         return 1;
@@ -685,6 +685,7 @@ export const actionPressureSensitivity = register({
                 elements,
                 appState,
                 (element) => element.strokeWidth,
+                true,
                 appState.currentItemStrokeWidth,
               ) ?? undefined
             }
