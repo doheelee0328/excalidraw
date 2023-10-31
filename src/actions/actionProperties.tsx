@@ -614,57 +614,15 @@ export const actionPressureSensitivity = register({
   },
   PanelComponent: ({ elements, appState, updateData }) => {
     const [pressureSimulationEnabled, setPressureSimulationEnabled] =
-      useState(false);
-    const [velocity, setVelocity] = useState(0);
+      useState(true);
+
     const togglePressureSimulation = () => {
       setPressureSimulationEnabled(!pressureSimulationEnabled);
-      const calculateLineThickness = (velocity: number) => {
-        if (pressureSimulationEnabled) {
-          const scalingFactor = 0.5;
-          return Math.max(1, 2 - velocity * scalingFactor);
-        }
-        return 1;
-      };
-
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      useEffect(() => {
-        const handleMouseMove = (event: {
-          clientX: number;
-          clientY: number;
-        }) => {
-          if (
-            lastX !== undefined &&
-            lastY !== undefined &&
-            lastTime !== undefined
-          ) {
-            const currentTime = new Date().getTime();
-            const dx = event.clientX - lastX;
-            const dy = event.clientY - lastY;
-            const dt = currentTime - lastTime;
-            const newVelocity = Math.sqrt(dx * dx + dy * dy) / dt;
-            setVelocity(newVelocity);
-          }
-
-          lastX = event.clientX;
-          lastY = event.clientY;
-          lastTime = new Date().getTime();
-        };
-
-        let lastX: number | undefined;
-        let lastY: number | undefined;
-        let lastTime: number | undefined;
-
-        window.addEventListener("mousemove", handleMouseMove);
-
-        // Clean up the event listener when the component unmounts
-        return () => {
-          window.removeEventListener("mousemove", handleMouseMove);
-        };
-      }, []); // Empty dependency array ensures this effect runs once on component mount
-
-      const updatedValue = calculateLineThickness(velocity);
-      updateData(updatedValue);
+      updateData(
+        pressureSimulationEnabled ? STROKE_WIDTH.thin : STROKE_WIDTH.extraBold,
+      );
     };
+
     return (
       <div className="pressure-container">
         <label className="pressure-label">
