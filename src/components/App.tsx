@@ -74,7 +74,6 @@ import {
   MQ_MAX_WIDTH_LANDSCAPE,
   MQ_MAX_WIDTH_PORTRAIT,
   MQ_RIGHT_SIDEBAR_MIN_WIDTH,
-  MQ_SM_MAX_WIDTH,
   POINTER_BUTTON,
   ROUNDNESS,
   SCROLL_TIMEOUT,
@@ -366,6 +365,7 @@ import { isSidebarDockedAtom } from "./Sidebar/Sidebar";
 import { StaticCanvas, InteractiveCanvas } from "./canvases";
 import { Renderer } from "../scene/Renderer";
 import { ShapeCache } from "../scene/ShapeCache";
+import MermaidToExcalidraw from "./MermaidToExcalidraw";
 import { LaserToolOverlay } from "./LaserTool/LaserTool";
 import { LaserPathManager } from "./LaserTool/LaserPathManager";
 import {
@@ -380,11 +380,15 @@ const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);
 
 const deviceContextInitialValue = {
-  isSmScreen: false,
-  isMobile: false,
+  viewport: {
+    isMobile: false,
+    isLandscape: false,
+  },
+  editor: {
+    isMobile: false,
+    canFitSidebar: false,
+  },
   isTouchScreen: false,
-  canDeviceFitSidebar: false,
-  isLandscape: false,
 };
 const DeviceContext = React.createContext<Device>(deviceContextInitialValue);
 DeviceContext.displayName = "DeviceContext";
@@ -435,6 +439,9 @@ export const useExcalidrawSetAppState = () =>
 export const useExcalidrawActionManager = () =>
   useContext(ExcalidrawActionManagerContext);
 
+const supportsResizeObserver =
+  typeof window !== "undefined" && "ResizeObserver" in window;
+
 let didTapTwice: boolean = false;
 let tappedTwiceTimer = 0;
 let isHoldingSpace: boolean = false;
@@ -471,7 +478,6 @@ class App extends React.Component<AppProps, AppState> {
   unmounted: boolean = false;
   actionManager: ActionManager;
   device: Device = deviceContextInitialValue;
-  detachIsMobileMqHandler?: () => void;
 
   private excalidrawContainerRef = React.createRef<HTMLDivElement>();
 
@@ -1179,7 +1185,7 @@ class App extends React.Component<AppProps, AppState> {
       <div
         className={clsx("excalidraw excalidraw-container", {
           "excalidraw--view-mode": this.state.viewModeEnabled,
-          "excalidraw--mobile": this.device.isMobile,
+          "excalidraw--mobile": this.device.editor.isMobile,
         })}
         style={{
           ["--ui-pointerEvents" as any]:
@@ -1245,7 +1251,11 @@ class App extends React.Component<AppProps, AppState> {
                           isCollaborating={this.props.isCollaborating}
                         >
                           {this.props.children}
+                          {this.state.openDialog === "mermaid" && (
+                            <MermaidToExcalidraw />
+                          )}
                         </LayerUI>
+
                         <div className="excalidraw-textEditorContainer" />
                         <div className="excalidraw-contextMenuContainer" />
                         <div className="excalidraw-eye-dropper-container" />
@@ -1652,20 +1662,62 @@ class App extends React.Component<AppProps, AppState> {
     });
   };
 
-  private refreshDeviceState = (container: HTMLDivElement) => {
-    const { width, height } = container.getBoundingClientRect();
+  private isMobileBreakpoint = (width: number, height: number) => {
+    return (
+      width < MQ_MAX_WIDTH_PORTRAIT ||
+      (height < MQ_MAX_HEIGHT_LANDSCAPE && width < MQ_MAX_WIDTH_LANDSCAPE)
+    );
+  };
+
+  private refreshViewportBreakpoints = () => {
+    const container = this.excalidrawContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const { clientWidth: viewportWidth, clientHeight: viewportHeight } =
+      document.body;
+
+    const prevViewportState = this.device.viewport;
+
+    const nextViewportState = updateObject(prevViewportState, {
+      isLandscape: viewportWidth > viewportHeight,
+      isMobile: this.isMobileBreakpoint(viewportWidth, viewportHeight),
+    });
+
+    if (prevViewportState !== nextViewportState) {
+      this.device = { ...this.device, viewport: nextViewportState };
+      return true;
+    }
+    return false;
+  };
+
+  private refreshEditorBreakpoints = () => {
+    const container = this.excalidrawContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const { width: editorWidth, height: editorHeight } =
+      container.getBoundingClientRect();
+
     const sidebarBreakpoint =
       this.props.UIOptions.dockedSidebarBreakpoint != null
         ? this.props.UIOptions.dockedSidebarBreakpoint
         : MQ_RIGHT_SIDEBAR_MIN_WIDTH;
-    this.device = updateObject(this.device, {
-      isLandscape: width > height,
-      isSmScreen: width < MQ_SM_MAX_WIDTH,
-      isMobile:
-        width < MQ_MAX_WIDTH_PORTRAIT ||
-        (height < MQ_MAX_HEIGHT_LANDSCAPE && width < MQ_MAX_WIDTH_LANDSCAPE),
-      canDeviceFitSidebar: width > sidebarBreakpoint,
+
+    const prevEditorState = this.device.editor;
+
+    const nextEditorState = updateObject(prevEditorState, {
+      isMobile: this.isMobileBreakpoint(editorWidth, editorHeight),
+      canFitSidebar: editorWidth > sidebarBreakpoint,
     });
+
+    if (prevEditorState !== nextEditorState) {
+      this.device = { ...this.device, editor: nextEditorState };
+      return true;
+    }
+    return false;
   };
 
   public async componentDidMount() {
@@ -1707,52 +1759,21 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     if (
-      this.excalidrawContainerRef.current &&
       // bounding rects don't work in tests so updating
       // the state on init would result in making the test enviro run
       // in mobile breakpoint (0 width/height), making everything fail
       !isTestEnv()
     ) {
-      this.refreshDeviceState(this.excalidrawContainerRef.current);
+      this.refreshViewportBreakpoints();
+      this.refreshEditorBreakpoints();
     }
 
-    if ("ResizeObserver" in window && this.excalidrawContainerRef?.current) {
+    if (supportsResizeObserver && this.excalidrawContainerRef.current) {
       this.resizeObserver = new ResizeObserver(() => {
-        // recompute device dimensions state
-        // ---------------------------------------------------------------------
-        this.refreshDeviceState(this.excalidrawContainerRef.current!);
-        // refresh offsets
-        // ---------------------------------------------------------------------
+        this.refreshEditorBreakpoints();
         this.updateDOMRect();
       });
       this.resizeObserver?.observe(this.excalidrawContainerRef.current);
-    } else if (window.matchMedia) {
-      const mdScreenQuery = window.matchMedia(
-        `(max-width: ${MQ_MAX_WIDTH_PORTRAIT}px), (max-height: ${MQ_MAX_HEIGHT_LANDSCAPE}px) and (max-width: ${MQ_MAX_WIDTH_LANDSCAPE}px)`,
-      );
-      const smScreenQuery = window.matchMedia(
-        `(max-width: ${MQ_SM_MAX_WIDTH}px)`,
-      );
-      const canDeviceFitSidebarMediaQuery = window.matchMedia(
-        `(min-width: ${
-          // NOTE this won't update if a different breakpoint is supplied
-          // after mount
-          this.props.UIOptions.dockedSidebarBreakpoint != null
-            ? this.props.UIOptions.dockedSidebarBreakpoint
-            : MQ_RIGHT_SIDEBAR_MIN_WIDTH
-        }px)`,
-      );
-      const handler = () => {
-        this.excalidrawContainerRef.current!.getBoundingClientRect();
-        this.device = updateObject(this.device, {
-          isSmScreen: smScreenQuery.matches,
-          isMobile: mdScreenQuery.matches,
-          canDeviceFitSidebar: canDeviceFitSidebarMediaQuery.matches,
-        });
-      };
-      mdScreenQuery.addListener(handler);
-      this.detachIsMobileMqHandler = () =>
-        mdScreenQuery.removeListener(handler);
     }
 
     const searchParams = new URLSearchParams(window.location.search.slice(1));
@@ -1797,6 +1818,11 @@ class App extends React.Component<AppProps, AppState> {
     this.scene
       .getElementsIncludingDeleted()
       .forEach((element) => ShapeCache.delete(element));
+    this.refreshViewportBreakpoints();
+    this.updateDOMRect();
+    if (!supportsResizeObserver) {
+      this.refreshEditorBreakpoints();
+    }
     this.setState({});
   });
 
@@ -1850,7 +1876,6 @@ class App extends React.Component<AppProps, AppState> {
       false,
     );
 
-    this.detachIsMobileMqHandler?.();
     window.removeEventListener(EVENT.MESSAGE, this.onWindowMessage, false);
   }
 
@@ -1935,11 +1960,10 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     if (
-      this.excalidrawContainerRef.current &&
       prevProps.UIOptions.dockedSidebarBreakpoint !==
-        this.props.UIOptions.dockedSidebarBreakpoint
+      this.props.UIOptions.dockedSidebarBreakpoint
     ) {
-      this.refreshDeviceState(this.excalidrawContainerRef.current);
+      this.refreshEditorBreakpoints();
     }
 
     if (
@@ -2324,11 +2348,12 @@ class App extends React.Component<AppProps, AppState> {
     },
   );
 
-  private addElementsFromPasteOrLibrary = (opts: {
+  addElementsFromPasteOrLibrary = (opts: {
     elements: readonly ExcalidrawElement[];
     files: BinaryFiles | null;
     position: { clientX: number; clientY: number } | "cursor" | "center";
     retainSeed?: boolean;
+    fitToContent?: boolean;
   }) => {
     const elements = restoreElements(opts.elements, null, undefined);
     const [minX, minY, maxX, maxY] = getCommonBounds(elements);
@@ -2404,7 +2429,7 @@ class App extends React.Component<AppProps, AppState> {
         // from library, not when pasting from clipboard. Alas.
         openSidebar:
           this.state.openSidebar &&
-          this.device.canDeviceFitSidebar &&
+          this.device.editor.canFitSidebar &&
           jotaiStore.get(isSidebarDockedAtom)
             ? this.state.openSidebar
             : null,
@@ -2433,6 +2458,12 @@ class App extends React.Component<AppProps, AppState> {
       },
     );
     this.setActiveTool({ type: "selection" });
+
+    if (opts.fitToContent) {
+      this.scrollToContent(newElements, {
+        fitToContent: true,
+      });
+    }
   };
 
   // TODO rewrite this to paste both text & images at the same time if
@@ -2612,7 +2643,7 @@ class App extends React.Component<AppProps, AppState> {
       !isPlainPaste &&
       textElements.length > 1 &&
       PLAIN_PASTE_TOAST_SHOWN === false &&
-      !this.device.isMobile
+      !this.device.editor.isMobile
     ) {
       this.setToast({
         message: t("toast.pasteAsSingleElement", {
@@ -2646,7 +2677,7 @@ class App extends React.Component<AppProps, AppState> {
       trackEvent(
         "toolbar",
         "toggleLock",
-        `${source} (${this.device.isMobile ? "mobile" : "desktop"})`,
+        `${source} (${this.device.editor.isMobile ? "mobile" : "desktop"})`,
       );
     }
     this.setState((prevState) => {
@@ -3141,7 +3172,9 @@ class App extends React.Component<AppProps, AppState> {
             trackEvent(
               "toolbar",
               shape,
-              `keyboard (${this.device.isMobile ? "mobile" : "desktop"})`,
+              `keyboard (${
+                this.device.editor.isMobile ? "mobile" : "desktop"
+              })`,
             );
           }
           this.setActiveTool({ type: shape });
@@ -3306,6 +3339,10 @@ class App extends React.Component<AppProps, AppState> {
         ...commonResets,
       };
     });
+  };
+
+  setOpenDialog = (dialogType: AppState["openDialog"]) => {
+    this.setState({ openDialog: dialogType });
   };
 
   private setCursor = (cursor: string) => {
@@ -3871,7 +3908,7 @@ class App extends React.Component<AppProps, AppState> {
           element,
           this.state,
           [scenePointer.x, scenePointer.y],
-          this.device.isMobile,
+          this.device.editor.isMobile,
         )
       );
     });
@@ -3903,7 +3940,7 @@ class App extends React.Component<AppProps, AppState> {
       this.hitLinkElement,
       this.state,
       [lastPointerDownCoords.x, lastPointerDownCoords.y],
-      this.device.isMobile,
+      this.device.editor.isMobile,
     );
     const lastPointerUpCoords = viewportCoordsToSceneCoords(
       this.lastPointerUpEvent!,
@@ -3913,7 +3950,7 @@ class App extends React.Component<AppProps, AppState> {
       this.hitLinkElement,
       this.state,
       [lastPointerUpCoords.x, lastPointerUpCoords.y],
-      this.device.isMobile,
+      this.device.editor.isMobile,
     );
     if (lastPointerDownHittingLinkIcon && lastPointerUpHittingLinkIcon) {
       let url = this.hitLinkElement.link;
@@ -4258,6 +4295,7 @@ class App extends React.Component<AppProps, AppState> {
       scenePointer.x,
       scenePointer.y,
     );
+
     this.hitLinkElement = this.getElementLinkAtPosition(
       scenePointer,
       hitElement,
@@ -4774,7 +4812,7 @@ class App extends React.Component<AppProps, AppState> {
     );
     const clicklength =
       event.timeStamp - (this.lastPointerDownEvent?.timeStamp ?? 0);
-    if (this.device.isMobile && clicklength < 300) {
+    if (this.device.editor.isMobile && clicklength < 300) {
       const hitElement = this.getElementAtPosition(
         scenePointer.x,
         scenePointer.y,
