@@ -597,32 +597,34 @@ export const actionChangeOpacity = register({
 export const actionPressureSensitivity = register({
   name: "pressureSensitivity",
   trackEvent: false,
-  perform: (elements, appState, value) => {
+  perform: (elements, appState, value, drawingSeed) => {
+    const adjustedStrokeWidth = calculateAdjustedStrokeWidth(drawingSeed);
     return {
       elements: changeProperty(
         elements,
         appState,
         (el) =>
           newElementWith(el, {
-            strokeWidth: value,
+            strokeWidth: adjustedStrokeWidth,
           }),
         true,
       ),
-      appState: { ...appState, currentItemStrokeWidth: value },
+      appState: { ...appState, currentItemStrokeWidth: adjustedStrokeWidth },
       commitToHistory: true,
     };
   },
   PanelComponent: ({ elements, appState, updateData }) => {
     const [pressureSimulationEnabled, setPressureSimulationEnabled] =
-      useState(true);
+      useState(false);
 
     const togglePressureSimulation = () => {
-      setPressureSimulationEnabled(!pressureSimulationEnabled);
-      updateData(
-        pressureSimulationEnabled ? STROKE_WIDTH.thin : STROKE_WIDTH.extraBold,
-      );
-    };
+      setPressureSimulationEnabled((prev) => !prev);
+      const strokeWidth = pressureSimulationEnabled
+        ? appState.currentItemStrokeWidth
+        : 1;
 
+      updateData(strokeWidth);
+    };
     return (
       <div className="pressure-container">
         <label className="pressure-label">
@@ -630,29 +632,28 @@ export const actionPressureSensitivity = register({
         </label>
         <div className="pressure-button-container">
           <div
+            onClick={togglePressureSimulation}
             className={`pressure-button-toggle-ball ${
               pressureSimulationEnabled ? "active" : ""
             }`}
-            onClick={togglePressureSimulation}
           ></div>
           <button
             className="pressure-button"
             onClick={togglePressureSimulation}
-            value={
-              getFormValue(
-                elements,
-                appState,
-                (element) => element.strokeWidth,
-                true,
-                appState.currentItemStrokeWidth,
-              ) ?? undefined
-            }
+            value={appState.currentItemStrokeWidth}
           ></button>
         </div>
       </div>
     );
   },
 });
+
+function calculateAdjustedStrokeWidth(speed: any) {
+  const baseStrokeWidth = 1;
+  const speedFactor = speed;
+  const adjustedStrokeWidth = baseStrokeWidth * speedFactor; // Adjusted the formula to make the line thicker with higher speed
+  return adjustedStrokeWidth;
+}
 
 export const actionChangeFontSize = register({
   name: "changeFontSize",

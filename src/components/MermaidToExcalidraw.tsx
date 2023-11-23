@@ -92,15 +92,15 @@ const MermaidToExcalidraw = () => {
     canvasNode.replaceChildren();
   };
 
-  useEffect(() => {
-    const loadMermaidToExcalidrawLib = async () => {
-      const api = await import(
-        /* webpackChunkName:"mermaid-to-excalidraw" */ "@excalidraw/mermaid-to-excalidraw"
-      );
-      setMermaidToExcalidrawLib({ loaded: true, api });
-    };
-    loadMermaidToExcalidrawLib();
-  }, []);
+  // useEffect(() => {
+  //   const loadMermaidToExcalidrawLib = async () => {
+  //     const api = await import(
+  //       //  webpackChunkName:"mermaid-to-excalidraw"  "@excalidraw/mermaid-to-excalidraw"
+  //     );
+  //     setMermaidToExcalidrawLib({ loaded: true, api });
+  //   };
+  //   loadMermaidToExcalidrawLib();
+  // }, []);
 
   useEffect(() => {
     const data = importMermaidDataFromStorage() || MERMAID_EXAMPLE;

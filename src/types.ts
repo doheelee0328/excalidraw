@@ -170,6 +170,7 @@ export type InteractiveCanvasAppState = Readonly<
 >;
 
 export type AppState = {
+  currentItemStrokeWidth: any;
   contextMenu: {
     items: ContextMenuItems;
     top: number;

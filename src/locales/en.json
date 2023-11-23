@@ -27,7 +27,7 @@
     "strokeStyle_dashed": "Dashed",
     "strokeStyle_dotted": "Dotted",
     "sloppiness": "Sloppiness",
-    "pressureSensitivity": "Pressure Sensitivity",
+    "": "Pressure Sensitivity",
     "opacity": "Opacity",
     "textAlign": "Text align",
     "edges": "Edges",
@@ -108,6 +108,7 @@
     "unbindText": "Unbind text",
     "bindText": "Bind text to the container",
     "createContainerFromText": "Wrap text in a container",
+    "pressureSensitivity": "Pressure Sensitivity",
     "link": {
       "edit": "Edit link",
       "editEmbed": "Edit link & embed",
